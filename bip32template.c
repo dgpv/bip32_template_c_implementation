@@ -339,14 +339,15 @@ int bip32_template_getchar(bip32_template_getchar_context_t* ctx, char* out_p)
 }
 
 int bip32_template_parse(bip32_template_getchar_func_t get_char, bip32_template_getchar_context_t* ctx,
-                         bip32_template_format_unambigous_flag_t flag,
+                         bip32_template_format_mode_t mode,
                          bip32_template_t* template_p, bip32_template_error_t* error_p)
 {
     parse_state_t state = STATE_PARSE_SECTION_START;
     bip32_template_error_t error = BIP32_TEMPLATE_ERROR_UNDEFINED;
     parse_state_t return_state = STATE_PARSE_INVALID;
     uint32_t index_value = INVALID_INDEX;
-    int is_format_unambiguous = flag == BIP32_TEMPLATE_FORMAT_UNAMBIGOUS;
+    int is_format_unambiguous = mode == BIP32_TEMPLATE_FORMAT_UNAMBIGOUS;
+    int is_format_onlypath = mode == BIP32_TEMPLATE_FORMAT_ONLYPATH;
     char accepted_hardened_markers[2] = { HARDENED_MARKER_LETTER,
                                           HARDENED_MARKER_APOSTROPHE };
     char c;
@@ -377,22 +378,22 @@ int bip32_template_parse(bip32_template_getchar_func_t get_char, bip32_template_
         switch( state ) {
             case STATE_PARSE_SECTION_START:
                 {
-                    if( (c == '[' || c == '*')
+                    if( (c == '[' || c == '*') && !is_format_onlypath
                         && template_p->num_sections == BIP32_TEMPLATE_MAX_SECTIONS )
                     {
                         state = STATE_PARSE_ERROR;
                         error = BIP32_TEMPLATE_ERROR_PATH_TOO_LONG;
                     }
-                    else if( c == '/' ) {
+                    else if( c == '/' && !is_format_onlypath ) {
                         state = STATE_PARSE_ERROR;
                         error = BIP32_TEMPLATE_ERROR_UNEXPECTED_SLASH;
                     }
-                    else if( c == '[' ) {
+                    else if( c == '[' && !is_format_onlypath ) {
                         index_value = INVALID_INDEX;
                         state = STATE_PARSE_VALUE;
                         return_state = STATE_PARSE_RANGE_WITHIN_SECTION;
                     }
-                    else if( c == '*' ) {
+                    else if( c == '*' && !is_format_onlypath ) {
                         open_path_section_range(template_p, 0);
                         index_value = MAX_INDEX_VALUE;
                         state = STATE_PARSE_SECTION_END;
@@ -447,6 +448,8 @@ int bip32_template_parse(bip32_template_getchar_func_t get_char, bip32_template_
 
             case STATE_PARSE_RANGE_WITHIN_SECTION:
                 {
+                    assert( !is_format_onlypath );
+
                     if( c == 0 ) {
                         state = STATE_PARSE_ERROR;
                         error = BIP32_TEMPLATE_ERROR_UNEXPECTED_FINISH;
@@ -592,13 +595,13 @@ int bip32_template_parse(bip32_template_getchar_func_t get_char, bip32_template_
     return state == STATE_PARSE_SUCCESS;
 }
 
-int bip32_template_parse_string(const char* template_string, bip32_template_format_unambigous_flag_t flag,
+int bip32_template_parse_string(const char* template_string, bip32_template_format_mode_t mode,
                                 bip32_template_t* template_p, bip32_template_error_t* error_p,
                                 unsigned int* last_pos_p)
 {
     bip32_template_getchar_context_t ctx;
     bip32_template_context_set_string(template_string, &ctx);
-    int result = bip32_template_parse(bip32_template_getchar, &ctx, flag, template_p, error_p);
+    int result = bip32_template_parse(bip32_template_getchar, &ctx, mode, template_p, error_p);
     if( last_pos_p ) {
         *last_pos_p = ctx.pos;
     }
@@ -631,6 +634,36 @@ int bip32_template_match(const bip32_template_t* template_p, const uint32_t* pat
             return 0;
         }
     }
+
+    return 1;
+}
+
+/* Convert template to a simple path.
+ * Returns 0 if any section contains more than one range
+ * or any range has range_start != range_end,
+ * Returns 1 otherwise, and puts the path into path_p and path len into path_len_p
+ * Caller must set *path_len_p to the available number of elements in path_p */
+int bip32_template_to_path(const bip32_template_t* template_p, uint32_t* path_p, unsigned int* path_len_p)
+{
+    int i;
+
+    if( template_p->num_sections > *path_len_p ) {
+        return 0;
+    }
+
+    for( i = 0; i < template_p->num_sections; i++ ) {
+        if( template_p->sections[i].num_ranges != 1 ) {
+            return 0;
+        }
+        if( template_p->sections[i].ranges[0].range_start
+            != template_p->sections[i].ranges[0].range_end )
+        {
+            return 0;
+        }
+        path_p[i] = template_p->sections[i].ranges[0].range_start;
+    }
+
+    *path_len_p = template_p->num_sections;
 
     return 1;
 }

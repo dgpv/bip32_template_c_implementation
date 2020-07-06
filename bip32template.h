@@ -95,20 +95,22 @@ typedef struct {
 
 typedef enum {
     BIP32_TEMPLATE_FORMAT_AMBIGOUS,
-    BIP32_TEMPLATE_FORMAT_UNAMBIGOUS
-} bip32_template_format_unambigous_flag_t;
+    BIP32_TEMPLATE_FORMAT_UNAMBIGOUS,
+    BIP32_TEMPLATE_FORMAT_ONLYPATH,
+} bip32_template_format_mode_t;
 
 typedef int (*bip32_template_getchar_func_t)(bip32_template_getchar_context_t*, char*);
 
 void bip32_template_context_set_string(const char* template_string, bip32_template_getchar_context_t* ctx);
 int bip32_template_getchar(bip32_template_getchar_context_t* ctx, char* out_p);
 int bip32_template_parse(bip32_template_getchar_func_t get_char, bip32_template_getchar_context_t* ctx,
-                         bip32_template_format_unambigous_flag_t flag,
+                         bip32_template_format_mode_t mode,
                          bip32_template_t* template_p, bip32_template_error_t* error_p);
-int bip32_template_parse_string(const char* template_string, bip32_template_format_unambigous_flag_t flag,
+int bip32_template_parse_string(const char* template_string, bip32_template_format_mode_t mode,
                                 bip32_template_t* template_p, bip32_template_error_t* error_p,
                                 unsigned int* last_pos_p);
 int bip32_template_match(const bip32_template_t* template_p, const uint32_t* path_p, unsigned int path_len);
 const char* bip32_template_error_to_string(bip32_template_error_t error);
+int bip32_template_to_path(const bip32_template_t* template_p, uint32_t* path_p, unsigned int* path_len_p);
 
 #endif /* _BIP32_TEMPLATE_H_ */

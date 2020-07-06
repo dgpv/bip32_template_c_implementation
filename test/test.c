@@ -135,12 +135,12 @@ int main(int argc, char** argv)
     (void)argc;
     (void)argv;
     int i, ii;
-    bip32_template_t tmpl;
+    bip32_template_t tmpl, tmpl_onlypath;
     bip32_template_error_t error, expected_error;
     testcase_success_t* tcs;
     unsigned int last_pos, expected_pos;
     const char* tmpl_str;
-    bip32_template_format_unambigous_flag_t flag;
+    bip32_template_format_mode_t mode;
     uint32_t test_path[BIP32_TEMPLATE_MAX_SECTIONS];
     unsigned int test_path_len;
 
@@ -177,19 +177,38 @@ int main(int argc, char** argv)
                 exit(-1);
             }
         }
+        test_path_len = BIP32_TEMPLATE_MAX_SECTIONS;
+        if( bip32_template_parse_string(tcs->tmpl_str, BIP32_TEMPLATE_FORMAT_ONLYPATH,
+                                        &tmpl_onlypath, &error, &last_pos) )
+        {
+            if( !bip32_template_to_path(&tmpl_onlypath, test_path, &test_path_len) ) {
+                fprintf(stderr, "success-case %d (%s) template_to_path failed unexpectedly\n",
+                        i, tcs->tmpl_str);
+                show_template(&tmpl);
+                exit(-1);
+            }
+        }
+        else {
+            if( bip32_template_to_path(&tmpl, test_path, &test_path_len) ) {
+                fprintf(stderr, "success-case %d (%s) template_to_path succeeded unexpectedly\n",
+                        i, tcs->tmpl_str);
+                show_template(&tmpl);
+                exit(-1);
+            }
+        }
     }
 
     for( i = 0; i < (int)(sizeof(testcase_errors)/sizeof(testcase_errors[0])); i++ ) {
         expected_error = testcase_errors[i].error;
         if( expected_error == BIP32_TEMPLATE_ERROR_RANGE_START_NEXT_TO_PREVIOUS ) {
-            flag = BIP32_TEMPLATE_FORMAT_UNAMBIGOUS;
+            mode = BIP32_TEMPLATE_FORMAT_UNAMBIGOUS;
         }
         else {
-            flag = BIP32_TEMPLATE_FORMAT_AMBIGOUS;
+            mode = BIP32_TEMPLATE_FORMAT_AMBIGOUS;
         }
         for( ii = 0; ii < testcase_errors[i].num_strings; ii++ ) {
             tmpl_str = testcase_errors[i].strings[ii];
-            if( bip32_template_parse_string(tmpl_str, flag, &tmpl, &error, &last_pos) ) {
+            if( bip32_template_parse_string(tmpl_str, mode, &tmpl, &error, &last_pos) ) {
                 fprintf(stderr, "error-case \"%s\" sample %d (\"%s\") succeeded at position %u\n",
                         bip32_template_error_to_string(expected_error), ii+1, tmpl_str, last_pos);
                 exit(-1);
