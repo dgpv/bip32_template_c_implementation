@@ -622,8 +622,9 @@ int bip32_template_match(const bip32_template_t* template_p, const uint32_t* pat
             if( path_p[i] < template_p->sections[i].ranges[ii].range_start
                 || path_p[i] > template_p->sections[i].ranges[ii].range_end )
             {
-                /* do nothing, this way our the condition check matches
-                 * the condition in the formal spec */
+                /* Do nothing.
+                 * This way the condition check here matches
+                 * the condition check in the formal spec */
             }
             else {
                 range_match = 1;
