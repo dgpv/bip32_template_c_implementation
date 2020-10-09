@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     for state in test_data.keys():
         if state == 'normal_finish':
-            print("testcase_success_t testcase_success[] = {")
+            print("testcase_success_type testcase_success[] = {")
             for i, case_data in enumerate(test_data[state]):
                 tmpl_str, tmpl_data_str = case_data
                 print('{', f'"{tmpl_str}",', '{', end='')
@@ -58,7 +58,7 @@ if __name__ == '__main__':
             vals = ",\n".join(f'"{val}"' for val in test_data[state])
             print(f"const char* testcase_{state}[] = {'{'} {vals} {'}'};")
 
-    print("struct { bip32_template_error_t error; int num_strings; "
+    print("struct { bip32_template_error_type error; int num_strings; "
           "const char** strings; } testcase_errors[] = {")
 
     error_states = list(test_data.keys())

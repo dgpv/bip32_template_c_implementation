@@ -28,12 +28,12 @@
 
 typedef struct {
     const char* tmpl_str;
-    bip32_template_t tmpl;
-} testcase_success_t;
+    bip32_template_type tmpl;
+} testcase_success_type;
 
 #include "test_data.h"
 
-static int templates_equal(bip32_template_t* a, bip32_template_t* b)
+static int templates_equal(bip32_template_type* a, bip32_template_type* b)
 {
     int i;
     int ii;
@@ -59,7 +59,7 @@ static int templates_equal(bip32_template_t* a, bip32_template_t* b)
     return 1;
 }
 
-static int extract_path(bip32_template_t* template_p, uint32_t* path_p, unsigned int* path_len_p, int want_nomatch)
+static int extract_path(bip32_template_type* template_p, uint32_t* path_p, unsigned int* path_len_p, int want_nomatch)
 {
     *path_len_p = template_p->num_sections;
 
@@ -70,7 +70,7 @@ static int extract_path(bip32_template_t* template_p, uint32_t* path_p, unsigned
     uint32_t val;
 
     for( i = 0; i < template_p->num_sections; i++ ) {
-        bip32_template_section_t* section_p = &template_p->sections[i];
+        bip32_template_section_type* section_p = &template_p->sections[i];
         if( want_nomatch && !have_nomatch ) {
             if( section_p->ranges[0].range_start < 0x80000000
                 && section_p->ranges[0].range_start > 0 )
@@ -115,7 +115,7 @@ static int extract_path(bip32_template_t* template_p, uint32_t* path_p, unsigned
     return have_nomatch;
 }
 
-static void show_template(bip32_template_t* tmpl)
+static void show_template(bip32_template_type* tmpl)
 {
     int i, ii;
 
@@ -135,12 +135,12 @@ int main(int argc, char** argv)
     (void)argc;
     (void)argv;
     int i, ii;
-    bip32_template_t tmpl, tmpl_onlypath;
-    bip32_template_error_t error, expected_error;
-    testcase_success_t* tcs;
+    bip32_template_type tmpl, tmpl_onlypath;
+    bip32_template_error_type error, expected_error;
+    testcase_success_type* tcs;
     unsigned int last_pos, expected_pos;
     const char* tmpl_str;
-    bip32_template_format_mode_t mode;
+    bip32_template_format_mode_type mode;
     uint32_t test_path[BIP32_TEMPLATE_MAX_SECTIONS];
     unsigned int test_path_len;
 

@@ -42,14 +42,14 @@ typedef enum {
     STATE_PARSE_RANGE_WITHIN_SECTION,
     STATE_PARSE_SECTION_END,
     STATE_PARSE_VALUE
-} parse_state_t;
+} parse_state_type;
 
 typedef enum {
     RANGE_CORRECTNESS_FLAG_RANGE_NEXT,
     RANGE_CORRECTNESS_FLAG_RANGE_LAST
-} range_correctness_flag_t;
+} range_correctness_flag_type;
 
-static int is_parse_finished(parse_state_t state) {
+static int is_parse_finished(parse_state_type state) {
     assert( state != STATE_PARSE_INVALID );
 
     if( state == STATE_PARSE_SUCCESS || state == STATE_PARSE_ERROR ) {
@@ -66,7 +66,7 @@ static int is_digit(char c) {
     return 0;
 }
 
-static bip32_template_error_t unexpected_char_error(char c) {
+static bip32_template_error_type unexpected_char_error(char c) {
     if( c == 0 ) {
         return BIP32_TEMPLATE_ERROR_UNEXPECTED_FINISH;
     }
@@ -83,7 +83,7 @@ static bip32_template_error_t unexpected_char_error(char c) {
 
 
 static int process_digit(char c, uint32_t* index_value_p,
-                         parse_state_t* state_p, bip32_template_error_t* error_p)
+                         parse_state_type* state_p, bip32_template_error_type* error_p)
 {
     assert( is_digit(c) );
 
@@ -120,35 +120,35 @@ static int process_digit(char c, uint32_t* index_value_p,
     return 1;
 }
 
-static bip32_template_section_t* get_last_section(bip32_template_t* template_p)
+static bip32_template_section_type* get_last_section(bip32_template_type* template_p)
 {
     assert( template_p->num_sections < BIP32_TEMPLATE_MAX_SECTIONS );
     return &template_p->sections[template_p->num_sections];
 }
 
-static bip32_template_section_range_t* get_last_section_range(bip32_template_section_t* section_p)
+static bip32_template_section_range_type* get_last_section_range(bip32_template_section_type* section_p)
 {
     assert( section_p->num_ranges < BIP32_TEMPLATE_MAX_RANGES_PER_SECTION );
 
     return &section_p->ranges[section_p->num_ranges];
 }
 
-static void open_path_section_range(bip32_template_t* template_p, uint32_t index_value)
+static void open_path_section_range(bip32_template_type* template_p, uint32_t index_value)
 {
-    bip32_template_section_range_t* range_p = get_last_section_range(get_last_section(template_p));
+    bip32_template_section_range_type* range_p = get_last_section_range(get_last_section(template_p));
     range_p->range_start = index_value;
     assert( range_p->range_end == INVALID_INDEX );
 }
 
-static int is_range_open(bip32_template_section_range_t* range_p)
+static int is_range_open(bip32_template_section_range_type* range_p)
 {
     return range_p->range_start != INVALID_INDEX && range_p->range_end == INVALID_INDEX;
 }
 
-static int finalize_last_section(bip32_template_t* template_p, uint32_t index_value)
+static int finalize_last_section(bip32_template_type* template_p, uint32_t index_value)
 {
     assert( index_value != INVALID_INDEX );
-    bip32_template_section_range_t* range_p = get_last_section_range(get_last_section(template_p));
+    bip32_template_section_range_type* range_p = get_last_section_range(get_last_section(template_p));
     if( is_range_open(range_p) ) {
         assert( range_p->range_end == INVALID_INDEX );
         range_p->range_end = index_value;
@@ -163,20 +163,20 @@ static int finalize_last_section(bip32_template_t* template_p, uint32_t index_va
     return 0;
 }
 
-static void normalize_last_section_and_advance_ranges(bip32_template_t* template_p)
+static void normalize_last_section_and_advance_ranges(bip32_template_type* template_p)
 {
-    bip32_template_section_t* section_p = get_last_section(template_p);
+    bip32_template_section_type* section_p = get_last_section(template_p);
 
     assert( section_p->num_ranges < BIP32_TEMPLATE_MAX_RANGES_PER_SECTION );
 
-    bip32_template_section_range_t* last_range_p = &section_p->ranges[section_p->num_ranges];
+    bip32_template_section_range_type* last_range_p = &section_p->ranges[section_p->num_ranges];
 
     if( section_p->num_ranges == 0 ) {
         section_p->num_ranges++;
         return;
     }
 
-    bip32_template_section_range_t* prev_range_p = &section_p->ranges[section_p->num_ranges-1];
+    bip32_template_section_range_type* prev_range_p = &section_p->ranges[section_p->num_ranges-1];
 
     assert( last_range_p->range_start <= MAX_INDEX_VALUE );
     assert( last_range_p->range_end <= MAX_INDEX_VALUE );
@@ -193,11 +193,11 @@ static void normalize_last_section_and_advance_ranges(bip32_template_t* template
     }
 }
 
-static void harden_last_section(bip32_template_t* template_p)
+static void harden_last_section(bip32_template_type* template_p)
 {
     int i;
 
-    bip32_template_section_t* section_p = get_last_section(template_p);
+    bip32_template_section_type* section_p = get_last_section(template_p);
 
     for( i = 0; i < section_p->num_ranges; i++ ) {
         assert( section_p->ranges[i].range_start <= MAX_INDEX_VALUE );
@@ -208,13 +208,13 @@ static void harden_last_section(bip32_template_t* template_p)
     }
 }
 
-static int is_prev_section_hardened(bip32_template_t* template_p)
+static int is_prev_section_hardened(bip32_template_type* template_p)
 {
     assert( template_p->num_sections > 0 );
 
     int i;
     int is_hardened = -1;
-    bip32_template_section_t* section_p = &template_p->sections[template_p->num_sections-1];
+    bip32_template_section_type* section_p = &template_p->sections[template_p->num_sections-1];
 
     for( i = 0; i < section_p->num_ranges; i++ ) {
         if( section_p->ranges[i].range_start >= HARDENED_INDEX_START ) {
@@ -239,14 +239,14 @@ static int is_prev_section_hardened(bip32_template_t* template_p)
     return is_hardened;
 }
 
-static int check_range_correctness(bip32_template_t* template_p,
-                                   parse_state_t* state_p, bip32_template_error_t* error_p,
+static int check_range_correctness(bip32_template_type* template_p,
+                                   parse_state_type* state_p, bip32_template_error_type* error_p,
                                    int range_was_open, int is_format_unambiguous,
-                                   range_correctness_flag_t flag)
+                                   range_correctness_flag_type flag)
 {
-    bip32_template_section_t* section_p = get_last_section(template_p);
-    bip32_template_section_range_t* range_p = get_last_section_range(section_p);
-    bip32_template_section_range_t* prev_range_p;
+    bip32_template_section_type* section_p = get_last_section(template_p);
+    bip32_template_section_range_type* range_p = get_last_section_range(section_p);
+    bip32_template_section_range_type* prev_range_p;
 
     assert( range_p->range_start <= MAX_INDEX_VALUE );
     assert( range_p->range_end <= MAX_INDEX_VALUE );
@@ -310,14 +310,14 @@ static int check_range_correctness(bip32_template_t* template_p,
     return 1;
 }
 
-void bip32_template_context_set_string(const char* template_string, bip32_template_getchar_context_t* ctx)
+void bip32_template_context_set_string(const char* template_string, bip32_template_getchar_context_type* ctx)
 {
     ctx->pos = 0;
     ctx->stop = 0;
     ctx->data.str = template_string;
 }
 
-int bip32_template_getchar(bip32_template_getchar_context_t* ctx, char* out_p)
+int bip32_template_getchar(bip32_template_getchar_context_type* ctx, char* out_p)
 {
     if( ctx->pos == UINT_MAX ) {
         ctx->stop = 1;
@@ -338,13 +338,13 @@ int bip32_template_getchar(bip32_template_getchar_context_t* ctx, char* out_p)
     return 1;
 }
 
-int bip32_template_parse(bip32_template_getchar_func_t get_char, bip32_template_getchar_context_t* ctx,
-                         bip32_template_format_mode_t mode,
-                         bip32_template_t* template_p, bip32_template_error_t* error_p)
+int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_template_getchar_context_type* ctx,
+                         bip32_template_format_mode_type mode,
+                         bip32_template_type* template_p, bip32_template_error_type* error_p)
 {
-    parse_state_t state = STATE_PARSE_SECTION_START;
-    bip32_template_error_t error = BIP32_TEMPLATE_ERROR_UNDEFINED;
-    parse_state_t return_state = STATE_PARSE_INVALID;
+    parse_state_type state = STATE_PARSE_SECTION_START;
+    bip32_template_error_type error = BIP32_TEMPLATE_ERROR_UNDEFINED;
+    parse_state_type return_state = STATE_PARSE_INVALID;
     uint32_t index_value = INVALID_INDEX;
     int is_format_unambiguous = mode == BIP32_TEMPLATE_FORMAT_UNAMBIGOUS;
     int is_format_onlypath = mode == BIP32_TEMPLATE_FORMAT_ONLYPATH;
@@ -595,11 +595,11 @@ int bip32_template_parse(bip32_template_getchar_func_t get_char, bip32_template_
     return state == STATE_PARSE_SUCCESS;
 }
 
-int bip32_template_parse_string(const char* template_string, bip32_template_format_mode_t mode,
-                                bip32_template_t* template_p, bip32_template_error_t* error_p,
+int bip32_template_parse_string(const char* template_string, bip32_template_format_mode_type mode,
+                                bip32_template_type* template_p, bip32_template_error_type* error_p,
                                 unsigned int* last_pos_p)
 {
-    bip32_template_getchar_context_t ctx;
+    bip32_template_getchar_context_type ctx;
     bip32_template_context_set_string(template_string, &ctx);
     int result = bip32_template_parse(bip32_template_getchar, &ctx, mode, template_p, error_p);
     if( last_pos_p ) {
@@ -608,7 +608,7 @@ int bip32_template_parse_string(const char* template_string, bip32_template_form
     return result;
 }
 
-int bip32_template_match(const bip32_template_t* template_p, const uint32_t* path_p, unsigned int path_len)
+int bip32_template_match(const bip32_template_type* template_p, const uint32_t* path_p, unsigned int path_len)
 {
     int i, ii;
     int range_match;
@@ -644,7 +644,7 @@ int bip32_template_match(const bip32_template_t* template_p, const uint32_t* pat
  * or any range has range_start != range_end,
  * Returns 1 otherwise, and puts the path into path_p and path len into path_len_p
  * Caller must set *path_len_p to the available number of elements in path_p */
-int bip32_template_to_path(const bip32_template_t* template_p, uint32_t* path_p, unsigned int* path_len_p)
+int bip32_template_to_path(const bip32_template_type* template_p, uint32_t* path_p, unsigned int* path_len_p)
 {
     int i;
 
@@ -669,7 +669,7 @@ int bip32_template_to_path(const bip32_template_t* template_p, uint32_t* path_p,
     return 1;
 }
 
-const char* bip32_template_error_to_string(bip32_template_error_t error)
+const char* bip32_template_error_to_string(bip32_template_error_type error)
 {
     switch( error ) {
         case BIP32_TEMPLATE_ERROR_GETCHAR_FAILED:
