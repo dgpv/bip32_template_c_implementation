@@ -136,8 +136,11 @@ static bip32_template_section_range_type* get_last_section_range(bip32_template_
 static void open_path_section_range(bip32_template_type* template_p, uint32_t index_value)
 {
     bip32_template_section_range_type* range_p = get_last_section_range(get_last_section(template_p));
-    range_p->range_start = index_value;
+
+    assert( range_p->range_start == INVALID_INDEX );
     assert( range_p->range_end == INVALID_INDEX );
+
+    range_p->range_start = index_value;
 }
 
 static int is_range_open(bip32_template_section_range_type* range_p)
