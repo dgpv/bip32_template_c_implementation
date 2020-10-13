@@ -51,6 +51,7 @@ typedef struct {
 } bip32_template_section_type;
 
 typedef struct {
+    uint8_t is_partial;
     uint8_t num_sections; 
     bip32_template_section_type sections[BIP32_TEMPLATE_MAX_SECTIONS];
 } bip32_template_type;

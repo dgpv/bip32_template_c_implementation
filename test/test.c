@@ -38,6 +38,10 @@ static int templates_equal(bip32_template_type* a, bip32_template_type* b)
     int i;
     int ii;
 
+    if( a->is_partial != b->is_partial ) {
+        return 0;
+    }
+
     if( a->num_sections != b->num_sections ) {
         return 0;
     }
@@ -119,6 +123,7 @@ static void show_template(bip32_template_type* tmpl)
 {
     int i, ii;
 
+    fprintf(stderr, "is_partial: %u\n", tmpl->is_partial);
     fprintf(stderr, "num_sections: %u\n", tmpl->num_sections);
     for( i = 0; i < tmpl->num_sections; i++ ) {
         fprintf(stderr, "  section %d: num_ranges: %u\n", i, tmpl->sections[i].num_ranges);
