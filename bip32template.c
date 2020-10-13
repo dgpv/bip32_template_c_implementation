@@ -387,10 +387,6 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                         state = STATE_PARSE_ERROR;
                         error = BIP32_TEMPLATE_ERROR_PATH_TOO_LONG;
                     }
-                    else if( c == '/' && !is_format_onlypath ) {
-                        state = STATE_PARSE_ERROR;
-                        error = BIP32_TEMPLATE_ERROR_UNEXPECTED_SLASH;
-                    }
                     else if( c == '[' && !is_format_onlypath ) {
                         index_value = INVALID_INDEX;
                         state = STATE_PARSE_VALUE;
@@ -400,6 +396,10 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                         open_path_section_range(template_p, 0);
                         index_value = MAX_INDEX_VALUE;
                         state = STATE_PARSE_SECTION_END;
+                    }
+                    else if( c == '/' ) {
+                        state = STATE_PARSE_ERROR;
+                        error = BIP32_TEMPLATE_ERROR_UNEXPECTED_SLASH;
                     }
                     else if( is_digit(c)
                              && template_p->num_sections == BIP32_TEMPLATE_MAX_SECTIONS )

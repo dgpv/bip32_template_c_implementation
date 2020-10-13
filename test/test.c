@@ -136,9 +136,9 @@ int main(int argc, char** argv)
     (void)argv;
     int i, ii;
     bip32_template_type tmpl, tmpl_onlypath;
-    bip32_template_error_type error, expected_error;
+    bip32_template_error_type error, error_onlypath, expected_error;
     testcase_success_type* tcs;
-    unsigned int last_pos, expected_pos;
+    unsigned int last_pos, last_pos_onlypath, expected_pos;
     const char* tmpl_str;
     bip32_template_format_mode_type mode;
     uint32_t test_path[BIP32_TEMPLATE_MAX_SECTIONS];
@@ -178,9 +178,7 @@ int main(int argc, char** argv)
             }
         }
         test_path_len = BIP32_TEMPLATE_MAX_SECTIONS;
-        if( bip32_template_parse_string(tcs->tmpl_str, BIP32_TEMPLATE_FORMAT_ONLYPATH,
-                                        &tmpl_onlypath, &error, &last_pos) )
-        {
+        if( bip32_template_parse_string(tcs->tmpl_str, BIP32_TEMPLATE_FORMAT_ONLYPATH, &tmpl_onlypath, 0, 0) ) {
             if( !bip32_template_to_path(&tmpl_onlypath, test_path, &test_path_len) ) {
                 fprintf(stderr, "success-case %d (%s) template_to_path failed unexpectedly\n",
                         i, tcs->tmpl_str);
@@ -212,6 +210,26 @@ int main(int argc, char** argv)
                 fprintf(stderr, "error-case \"%s\" sample %d (\"%s\") succeeded at position %u\n",
                         bip32_template_error_to_string(expected_error), ii+1, tmpl_str, last_pos);
                 exit(-1);
+            }
+            if( !strchr(tmpl_str, '[') && !strchr(tmpl_str, '*') ) {
+                if( bip32_template_parse_string(
+                            tmpl_str, BIP32_TEMPLATE_FORMAT_ONLYPATH,
+                            &tmpl_onlypath, &error_onlypath, &last_pos_onlypath) )
+                {
+                    fprintf(stderr, "error-case \"%s\" sample %d (\"%s\") succeeded at position %u with onlypath flag\n",
+                            bip32_template_error_to_string(expected_error), ii+1, tmpl_str, last_pos_onlypath);
+                    exit(-1);
+                }
+                if( error_onlypath != error ) {
+                    fprintf(stderr, "error-case \"%s\" sample %d (\"%s\") has different error with onlypath: \"%s\"\n",
+                            bip32_template_error_to_string(expected_error), ii+1, tmpl_str, bip32_template_error_to_string(error_onlypath));
+                    exit(-1);
+                }
+                if( last_pos != last_pos_onlypath ) {
+                    fprintf(stderr, "error-case \"%s\" sample %d (\"%s\") has different error position with (%u) and without (%u) onlypath\n",
+                            bip32_template_error_to_string(expected_error), ii+1, tmpl_str, last_pos_onlypath, last_pos);
+                    exit(-1);
+                }
             }
 
             if( error != expected_error ) {
