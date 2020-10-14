@@ -149,7 +149,7 @@ static int is_range_open(bip32_template_section_range_type* range_p)
     return range_p->range_start != INVALID_INDEX && range_p->range_end == INVALID_INDEX;
 }
 
-static int finalize_last_section(bip32_template_type* template_p, uint32_t index_value)
+static int finalize_last_section_range(bip32_template_type* template_p, uint32_t index_value)
 {
     assert( index_value != INVALID_INDEX );
     bip32_template_section_range_type* range_p = get_last_section_range(get_last_section(template_p));
@@ -514,7 +514,7 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                             error = BIP32_TEMPLATE_ERROR_PATH_SECTION_TOO_LONG;
                         }
                         else {
-                            int was_open = finalize_last_section(template_p, index_value);
+                            int was_open = finalize_last_section_range(template_p, index_value);
                             if( check_range_correctness(template_p, &state, &error,
                                                         was_open, is_format_unambiguous,
                                                         RANGE_CORRECTNESS_FLAG_RANGE_NEXT) )
@@ -527,7 +527,7 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                         }
                     }
                     else if( c == ']' ) {
-                        int was_open = finalize_last_section(template_p, index_value);
+                        int was_open = finalize_last_section_range(template_p, index_value);
                         if( check_range_correctness(template_p, &state, &error,
                                                     was_open, is_format_unambiguous,
                                                     RANGE_CORRECTNESS_FLAG_RANGE_LAST) )
@@ -549,7 +549,7 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                         error = BIP32_TEMPLATE_ERROR_PATH_TOO_LONG;
                     }
                     else if( c == '/' ) {
-                        finalize_last_section(template_p, index_value);
+                        finalize_last_section_range(template_p, index_value);
                         normalize_last_section_and_advance_ranges(template_p);
                         assert( template_p->num_sections < BIP32_TEMPLATE_MAX_SECTIONS );
                         template_p->num_sections++;
@@ -557,7 +557,7 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                         state = STATE_PARSE_SECTION_START;
                     }
                     else if( c == 0 ) {
-                        finalize_last_section(template_p, index_value);
+                        finalize_last_section_range(template_p, index_value);
                         normalize_last_section_and_advance_ranges(template_p);
                         assert( template_p->num_sections < BIP32_TEMPLATE_MAX_SECTIONS );
                         template_p->num_sections++;
@@ -576,7 +576,7 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                         else {
                             accepted_hardened_markers[0] = c;
                             accepted_hardened_markers[1] = c;
-                            finalize_last_section(template_p, index_value);
+                            finalize_last_section_range(template_p, index_value);
                             normalize_last_section_and_advance_ranges(template_p);
                             harden_last_section(template_p);
                             assert( template_p->num_sections < BIP32_TEMPLATE_MAX_SECTIONS );
