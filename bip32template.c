@@ -553,21 +553,13 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                         state = STATE_PARSE_ERROR;
                         error = BIP32_TEMPLATE_ERROR_PATH_TOO_LONG;
                     }
-                    else if( c == '/' ) {
+                    else if( c == '/' || c == 0 ) {
                         finalize_last_section_range(template_p, index_value);
                         normalize_last_section_and_advance_ranges(template_p);
                         assert( template_p->num_sections < BIP32_TEMPLATE_MAX_SECTIONS );
                         template_p->num_sections++;
                         index_value = INVALID_INDEX;
-                        state = STATE_PARSE_SECTION_START;
-                    }
-                    else if( c == 0 ) {
-                        finalize_last_section_range(template_p, index_value);
-                        normalize_last_section_and_advance_ranges(template_p);
-                        assert( template_p->num_sections < BIP32_TEMPLATE_MAX_SECTIONS );
-                        template_p->num_sections++;
-                        index_value = INVALID_INDEX;
-                        state = STATE_PARSE_SUCCESS;
+                        state = ( c == 0 ? STATE_PARSE_SUCCESS : STATE_PARSE_SECTION_START );
                     }
                     else if( c == accepted_hardened_markers[0]
                                 || c == accepted_hardened_markers[1] )
