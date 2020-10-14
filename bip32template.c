@@ -259,8 +259,7 @@ static int check_range_correctness(bip32_template_type* template_p,
     int is_range_equals_wildcard = range_p->range_start == 0 && range_p->range_end == MAX_INDEX_VALUE;
     int is_start_larger_than_end = range_p->range_start > range_p->range_end;
     int is_single_index = ( flag == RANGE_CORRECTNESS_FLAG_RANGE_LAST
-                            ? (section_p->num_ranges == 0 && is_start_equals_end)
-                            : 0 );
+                            && section_p->num_ranges == 0 && is_start_equals_end );
 
     int is_start_before_previous = 0;
     int is_start_in_previous = 0;
