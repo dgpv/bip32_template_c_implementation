@@ -298,7 +298,7 @@ static int check_range_correctness(bip32_template_type* template_p,
         return 0;
     }
 
-    if( (range_was_open && is_start_larger_than_end) || is_start_before_previous ) {
+    if( is_start_larger_than_end || is_start_before_previous ) {
         *state_p = STATE_PARSE_ERROR;
         *error_p = BIP32_TEMPLATE_ERROR_RANGE_ORDER_BAD;
         return 0;
