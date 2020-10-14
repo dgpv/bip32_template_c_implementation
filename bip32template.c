@@ -153,16 +153,21 @@ static int finalize_last_section_range(bip32_template_type* template_p, uint32_t
 {
     assert( index_value != INVALID_INDEX );
     bip32_template_section_range_type* range_p = get_last_section_range(get_last_section(template_p));
+    if( range_p->range_start != INVALID_INDEX && range_p->range_end != INVALID_INDEX ) {
+        /* Because we call this funcion from two different FSM states
+         * (RANGE_WITHIN_SECTION and SECTION_END), and the function _changes_ the range,
+         * we can be here when the range is already finalized.
+         * The end of the range should be the same as the index, though. */
+        assert( range_p->range_end == index_value );
+        return 0;
+    }
     if( is_range_open(range_p) ) {
-        assert( range_p->range_end == INVALID_INDEX );
         range_p->range_end = index_value;
         return 1;
     }
-    assert( range_p->range_start == INVALID_INDEX || range_p->range_end != INVALID_INDEX );
-    if( range_p->range_start == INVALID_INDEX ) {
-        range_p->range_start = index_value;
-    }
-    assert( range_p->range_end == INVALID_INDEX || range_p->range_end == index_value );
+    assert( range_p->range_start == INVALID_INDEX );
+    assert( range_p->range_end == INVALID_INDEX );
+    range_p->range_start = index_value;
     range_p->range_end = index_value;
     return 0;
 }
