@@ -37,7 +37,6 @@ typedef enum {
     STATE_PARSE_SUCCESS,
     STATE_PARSE_ERROR,
 
-    STATE_PARSE_TEMPLATE_START,
     STATE_PARSE_SECTION_START,
     STATE_PARSE_NEXT_SECTION,
     STATE_PARSE_RANGE_WITHIN_SECTION,
@@ -74,8 +73,8 @@ static bip32_template_error_type unexpected_char_error(char c) {
     if( c == ' ' || c == '\t' ) {
         return BIP32_TEMPLATE_ERROR_UNEXPECTED_SPACE;
     }
-    if( c == '/' || c == '[' || c == ']' || c == '-' || c == ',' || c == '*'
-        || c == 'h' || c == '\'' || is_digit(c) )
+    if( c == 'm' || c == '/' || c == '[' || c == ']' || c == '-' || c == ','
+            || c == '*' || c == 'h' || c == '\'' || is_digit(c) )
     {
         return BIP32_TEMPLATE_ERROR_UNEXPECTED_CHAR;
     }
@@ -350,7 +349,7 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                          bip32_template_format_mode_type mode,
                          bip32_template_type* template_p, bip32_template_error_type* error_p)
 {
-    parse_state_type state = STATE_PARSE_TEMPLATE_START;
+    parse_state_type state = STATE_PARSE_SECTION_START;
     bip32_template_error_type error = BIP32_TEMPLATE_ERROR_UNDEFINED;
     parse_state_type return_state = STATE_PARSE_INVALID;
     uint32_t index_value = INVALID_INDEX;
@@ -378,36 +377,29 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
             break;
         }
 
+        /* PrefixParserFSM logic starts */
+        if( c == 'm' && ctx->pos == 1 ) {
+            template_p->is_partial = 0;
+            continue;
+        }
+        else if ( !template_p->is_partial && ctx->pos == 2 ) {
+            if( c == '/' ) {
+                continue;
+            }
+            state = STATE_PARSE_ERROR;
+            error = unexpected_char_error(c);
+            break;
+        }
+        /* PrefixParserFSM logic ends */
+
         if( state == STATE_PARSE_VALUE && !is_digit(c) ) {
             assert( return_state != STATE_PARSE_INVALID );
             assert( return_state != STATE_PARSE_VALUE );
             state = return_state;
             return_state = STATE_PARSE_INVALID;
         }
-        switch( state ) {
-            case STATE_PARSE_TEMPLATE_START:
-                {
-                    if( template_p->is_partial ) {
-                        /* no 'm' was seen yet */
-                        if( c == 'm' ) {
-                            template_p->is_partial = 0;
-                            break;
-                        }
-                        /* FALLTHROUGH, this must be partial template */
-                    }
-                    else {
-                        /* 'm' was seen, slash must follow */
-                        if( c == '/' ) {
-                            state = STATE_PARSE_SECTION_START;
-                        }
-                        else {
-                            state = STATE_PARSE_ERROR;
-                            error = unexpected_char_error(c);
-                        }
-                        break;
-                    }
-                } /* FALLTHROUGH */
 
+        switch( state ) {
             case STATE_PARSE_SECTION_START:
                 {
                     if( (c == '[' || c == '*') && !is_format_onlypath

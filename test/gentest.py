@@ -36,11 +36,9 @@ if __name__ == '__main__':
             print("testcase_success_type testcase_success[] = {")
             for i, case_data in enumerate(test_data[state]):
                 tmpl_str, tmpl_data_str = case_data
-                is_partial = i % 2
-                if not is_partial:
-                    tmpl_str = 'm/' + tmpl_str
                 print('{', f'"{tmpl_str}",', '{', end='')
                 tmpl = json.loads(tmpl_data_str)
+                is_partial = int(not tmpl_str.startswith('m/'))
                 print(f"{is_partial},", f"{len(tmpl)},", "{", end='')
                 sections = []
                 for section in tmpl:
