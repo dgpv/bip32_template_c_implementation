@@ -259,6 +259,21 @@ int main(int argc, char** argv)
                 if( tmpl_str[expected_pos-1] == '\'' || tmpl_str[expected_pos-1] == 'h' ) {
                     expected_pos++;
                 }
+                unsigned int num_slashes = 0;
+                const char* p = tmpl_str;
+                while(*p) {
+                    if( *p == '/' ) {
+                        num_slashes++;
+                    }
+                    p++;
+                }
+                if( num_slashes != BIP32_TEMPLATE_MAX_SECTIONS ) {
+                    fprintf(stderr, "error-case \"%s\" sample %d (\"%s\") expected to have %u slashes, "
+                                    "but it has \"%u\"\n",
+                            bip32_template_error_to_string(expected_error), ii+1, tmpl_str,
+                            BIP32_TEMPLATE_MAX_SECTIONS, num_slashes);
+                    exit(-1);
+                }
             }
             if( last_pos != expected_pos ) {
                 fprintf(stderr, "error-case \"%s\" sample %d (\"%s\") failed at position %u, "
