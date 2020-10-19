@@ -457,7 +457,7 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                     if( c == '/' ) {
                         state = STATE_PARSE_SECTION_START;
                     }
-                    else if( c == 0 && template_p->num_sections == BIP32_TEMPLATE_MAX_SECTIONS ) {
+                    else if( c == 0 && template_p->num_sections > BIP32_TEMPLATE_MAX_SECTIONS ) {
                         state = STATE_PARSE_ERROR;
                         error = BIP32_TEMPLATE_ERROR_PATH_TOO_LONG;
                     }

@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "../bip32template.h"
 
@@ -266,6 +267,10 @@ int main(int argc, char** argv)
                         num_slashes++;
                     }
                     p++;
+                }
+                if( tmpl_str[0] == 'm' && tmpl_str[1] == '/' ) {
+                    assert(num_slashes > 0);
+                    num_slashes--;
                 }
                 if( num_slashes != BIP32_TEMPLATE_MAX_SECTIONS ) {
                     fprintf(stderr, "error-case \"%s\" sample %d (\"%s\") expected to have %u slashes, "
