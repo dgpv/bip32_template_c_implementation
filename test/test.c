@@ -64,60 +64,74 @@ static int templates_equal(bip32_template_type* a, bip32_template_type* b)
     return 1;
 }
 
-static int extract_path(bip32_template_type* template_p, uint32_t* path_p, unsigned int* path_len_p, int want_nomatch)
+static void extract_path(bip32_template_type* template_p, uint32_t* path_p, unsigned int* path_len_p, int want_nomatch)
 {
+    assert( template_p->num_sections > 0 );
     *path_len_p = template_p->num_sections;
 
     int i;
     int ii;
     int have_put;
     int have_nomatch = 0;
-    uint32_t val;
 
     for( i = 0; i < template_p->num_sections; i++ ) {
         bip32_template_section_type* section_p = &template_p->sections[i];
-        if( want_nomatch && !have_nomatch ) {
-            if( section_p->ranges[0].range_start < 0x80000000
-                && section_p->ranges[0].range_start > 0 )
-            {
-                path_p[i] = 0;
-                have_nomatch = 1;
-            }
-            else if( section_p->ranges[0].range_start <= 0xFFFFFFFF
-                && section_p->ranges[0].range_start > 0x80000000 )
-            {
-                path_p[i] = 0x80000000;
-                have_nomatch = 1;
-            }
-            else if( section_p->ranges[section_p->num_ranges-1].range_end < 0x7FFFFFFF ) {
-                path_p[i] = 0x7FFFFFFF;
-                have_nomatch = 1;
-            }
-            else if( section_p->ranges[section_p->num_ranges-1].range_end < 0xFFFFFFFF ) {
-                path_p[i] = 0xFFFFFFFF;
-                have_nomatch = 1;
-            }
-        }
-        else {
-            have_put = 0;
-            for( ii = 0; ii < section_p->num_ranges; ii++ ) {
-                if( (rand() & 1) == 0 ) {
-                    if( (rand() & 1) == 0 ) {
-                        val = section_p->ranges[ii].range_start;
-                    }
-                    else {
-                        val = section_p->ranges[ii].range_end;
-                    }
-                    path_p[i] = val;
+        have_put = 0;
+        for( ii = 0; ii < section_p->num_ranges; ii++ ) {
+            u_int32_t start = section_p->ranges[ii].range_start;
+            u_int32_t end = section_p->ranges[ii].range_end;
+            if( want_nomatch && !have_nomatch ) {
+                if( (start & 0x7FFFFFFF) != 0 ) {
+                    path_p[i] = start-1;
+                    have_nomatch = 1;
+                    have_put = 1;
+                }
+                else if( (end | 0x80000000) != 0xFFFFFFFF ) {
+                    path_p[i] = end+1;
+                    have_nomatch = 1;
                     have_put = 1;
                 }
             }
-            if( ! have_put ) {
-                path_p[i] = section_p->ranges[0].range_start;
+            else if( (rand() & 1) == 0 ) {
+                if( (rand() & 1) == 0 ) {
+                    path_p[i] = start;
+                }
+                else {
+                    path_p[i] = end;
+                }
+                have_put = 1;
+            }
+            if( have_put ) {
+                break;
             }
         }
+        if( ! have_put ) {
+            path_p[i] = section_p->ranges[0].range_start;
+        }
     }
-    return have_nomatch;
+    if( want_nomatch && !have_nomatch ) {
+        /* Could not put non-matching value in any position, that means that all sections
+         * contain wildcard match. To make a non-matching path, just flip the last hardened
+         * section to unhardened. If there's no hardened sections, flip first section to hardened */
+        int have_flipped = 0;
+        for( i = 0; i < template_p->num_sections; i++ ) {
+            bip32_template_section_type* section_p = &template_p->sections[i];
+            assert( section_p->num_ranges == 1 );
+            assert( (section_p->ranges[0].range_start & 0x7FFFFFFF) == 0 );
+            assert( (section_p->ranges[0].range_end | 0x80000000) == 0xFFFFFFFF );
+            if( section_p->ranges[0].range_start >= 0x80000000 && !have_flipped ) {
+                /* Found the hardened section, flip */
+                path_p[i] = section_p->ranges[0].range_start ^ 0x80000000;
+                have_flipped = 1;
+                /* do not break so all sections are checked with asserts */
+            }
+        }
+        if( !have_flipped ) {
+            /* All sections were unhardened, make first section hardened */
+            assert( template_p->sections[0].ranges[0].range_start < 0x80000000 );
+            path_p[0] = template_p->sections[0].ranges[0].range_start | 0x80000000;
+        }
+    }
 }
 
 static void show_template(bip32_template_type* tmpl)
@@ -132,6 +146,17 @@ static void show_template(bip32_template_type* tmpl)
             fprintf(stderr, "    range %d: (%u, %u)\n", ii,
                     tmpl->sections[i].ranges[ii].range_start,
                     tmpl->sections[i].ranges[ii].range_end);
+        }
+    }
+}
+
+static void show_path(u_int32_t* path_p, u_int len)
+{
+    u_int i;
+    for( i = 0; i < len; i++ ) {
+        fprintf(stderr, "%u", path_p[i]);
+        if( i < len-1 ) {
+            fprintf(stderr, "/");
         }
     }
 }
@@ -176,12 +201,14 @@ int main(int argc, char** argv)
             show_template(&tmpl);
             exit(-1);
         }
-        if( extract_path(&tmpl, test_path, &test_path_len, 1) ) {
-            if( bip32_template_match(&tmpl, test_path, test_path_len) ) {
-                fprintf(stderr, "success-case %d (%s) non-match matched\n", i, tcs->tmpl_str);
-                show_template(&tmpl);
-                exit(-1);
-            }
+        extract_path(&tmpl, test_path, &test_path_len, 1);
+        if( bip32_template_match(&tmpl, test_path, test_path_len) ) {
+            fprintf(stderr, "success-case %d (%s) non-match matched\n", i, tcs->tmpl_str);
+            show_template(&tmpl);
+            fprintf(stderr, "path with no-match expected: ");
+            show_path(test_path, test_path_len);
+            fprintf(stderr, "\n");
+            exit(-1);
         }
         test_path_len = BIP32_TEMPLATE_MAX_SECTIONS;
         if( bip32_template_parse_string(tcs->tmpl_str, BIP32_TEMPLATE_FORMAT_ONLYPATH, &tmpl_onlypath, 0, 0) ) {
