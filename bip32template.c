@@ -457,10 +457,6 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                     if( c == '/' ) {
                         state = STATE_PARSE_SECTION_START;
                     }
-                    else if( c == 0 && template_p->num_sections > BIP32_TEMPLATE_MAX_SECTIONS ) {
-                        state = STATE_PARSE_ERROR;
-                        error = BIP32_TEMPLATE_ERROR_PATH_TOO_LONG;
-                    }
                     else if( c == 0 ) {
                         state = STATE_PARSE_SUCCESS;
                     }
@@ -541,11 +537,7 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
             case STATE_PARSE_SECTION_END:
                 {
                     assert( index_value != INVALID_INDEX );
-                    if( c == 0 && template_p->num_sections == BIP32_TEMPLATE_MAX_SECTIONS ) {
-                        state = STATE_PARSE_ERROR;
-                        error = BIP32_TEMPLATE_ERROR_PATH_TOO_LONG;
-                    }
-                    else if( c == '/' || c == 0 ) {
+                    if( c == '/' || c == 0 ) {
                         finalize_last_section_range(template_p, index_value);
                         normalize_last_section_and_advance_ranges(template_p);
                         assert( template_p->num_sections < BIP32_TEMPLATE_MAX_SECTIONS );
