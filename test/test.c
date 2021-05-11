@@ -244,7 +244,7 @@ int main(int argc, char** argv)
                         bip32_template_error_to_string(expected_error), ii+1, tmpl_str, last_pos);
                 exit(-1);
             }
-            if( !strchr(tmpl_str, '[') && !strchr(tmpl_str, '*') ) {
+            if( !strchr(tmpl_str, '{') && !strchr(tmpl_str, '*') ) {
                 if( bip32_template_parse_string(
                             tmpl_str, BIP32_TEMPLATE_FORMAT_ONLYPATH,
                             &tmpl_onlypath, &error_onlypath, &last_pos_onlypath) )

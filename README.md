@@ -10,8 +10,8 @@ The code should be useable without standard library, (except for asserts).
 It only imports `<limits.h>`, `<stdint.h>` and `<assert.h>`.
 
 Parse functions accept `mode` argument:
-* `BIP32_TEMPLATE_FORMAT_UNAMBIGOUS` to parse BIP32 template strings that are unambigous (specifiyng the range `[1,2,3]` is not allowed, must be specified as `[1-3]`
-* `BIP32_TEMPLATE_FORMAT_AMBIGOUS` to parse BIP32 template strings that allow specifiyng the range as `[1,2,3]`
+* `BIP32_TEMPLATE_FORMAT_UNAMBIGOUS` to parse BIP32 template strings that are unambigous (specifiyng the range `{1,2,3}` is not allowed, must be specified as `{1-3}`
+* `BIP32_TEMPLATE_FORMAT_AMBIGOUS` to parse BIP32 template strings that allow specifiyng the range as `{1,2,3}`
 * `BIP32_TEMPLATE_FORMAT_ONLYPATH` to parse just BIP32 paths (not templates) with the same code
 
 The implementation recognizes both full and partial paths, but does not offer any facilities to combine the paths

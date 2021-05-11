@@ -73,7 +73,7 @@ static bip32_template_error_type unexpected_char_error(char c) {
     if( c == ' ' || c == '\t' ) {
         return BIP32_TEMPLATE_ERROR_UNEXPECTED_SPACE;
     }
-    if( c == 'm' || c == '/' || c == '[' || c == ']' || c == '-' || c == ','
+    if( c == 'm' || c == '/' || c == '{' || c == '}' || c == '-' || c == ','
             || c == '*' || c == 'h' || c == '\'' || is_digit(c) )
     {
         return BIP32_TEMPLATE_ERROR_UNEXPECTED_CHAR;
@@ -402,13 +402,13 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
         switch( state ) {
             case STATE_PARSE_SECTION_START:
                 {
-                    if( (c == '[' || c == '*') && !is_format_onlypath
+                    if( (c == '{' || c == '*') && !is_format_onlypath
                         && template_p->num_sections == BIP32_TEMPLATE_MAX_SECTIONS )
                     {
                         state = STATE_PARSE_ERROR;
                         error = BIP32_TEMPLATE_ERROR_PATH_TOO_LONG;
                     }
-                    else if( c == '[' && !is_format_onlypath ) {
+                    else if( c == '{' && !is_format_onlypath ) {
                         index_value = INVALID_INDEX;
                         state = STATE_PARSE_VALUE;
                         return_state = STATE_PARSE_RANGE_WITHIN_SECTION;
@@ -519,7 +519,7 @@ int bip32_template_parse(bip32_template_getchar_func_type get_char, bip32_templa
                             }
                         }
                     }
-                    else if( c == ']' ) {
+                    else if( c == '}' ) {
                         int was_open = finalize_last_section_range(template_p, index_value);
                         if( check_range_correctness(template_p, &state, &error,
                                                     was_open, is_format_unambiguous,
