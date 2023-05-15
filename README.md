@@ -1,7 +1,7 @@
 # C implementation of BIP32 path template parser finite state machine
 
 This repository contains an implementation of specification of the parser for BIP32 path templates
-described in [bip-path-templates.mediawiki](https://github.com/dgpv/bip32_template_parse_tplaplus_spec/blob/master/bip-path-templates.mediawiki)
+described in [BIP-88](https://github.com/bitcoin/bips/blob/master/bip-0088.mediawiki)
 and specified by TLA+ specification at [https://github.com/dgpv/bip32_template_parse_tplaplus_spec](https://github.com/dgpv/bip32_template_parse_tplaplus_spec)
 
 The implementation is in `bip32template.c`, public definitions is in `bip32template.h`
